@@ -11,6 +11,7 @@ Public function:
 """
 
 from playwright.sync_api import sync_playwright
+from backend.database import init_db, upsert_product, add_price
 
 from worker.sites.base import SiteParser, ScrapeFailed
 from worker.sites.web_scraping_dev import WebScrapingDevParser
@@ -73,10 +74,38 @@ def scrape_product(url: str, timeout_ms: int = 30000) -> dict:
             # Always close the browser, even on failure — otherwise retries leak processes
             browser.close()
 
+def scrape_and_save(url: str) -> dict:
+    """Scrape a URL and persist the result to the database.
+
+    Returns the scrape result merged with {"product_id": int}.
+    """
+    result = scrape_product(url)                # may retry on failure
+    product_id = upsert_product(url, result["name"])   # get/create product row
+    add_price(                                   # append a history row
+        product_id,
+        result["price"],
+        result["currency"],
+        result["in_stock"],
+    )
+    log.info(
+        "scrape_saved",
+        extra={"extra": {
+            "url": url,
+            "product_id": product_id,
+            "price": result["price"],
+        }},
+    )
+    return {**result, "product_id": product_id}
 
 if __name__ == "__main__":
-    # CLI: python3 -m worker.scraper <url>
     import sys
 
     url = sys.argv[1] if len(sys.argv) > 1 else "https://web-scraping.dev/product/1"
-    print(scrape_product(url))
+    save = "--save" in sys.argv
+
+    init_db()                          # ensure tables exist
+
+    if save:
+        print(scrape_and_save(url))
+    else:
+        print(scrape_product(url))
