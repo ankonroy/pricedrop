@@ -110,9 +110,66 @@ def get_last_price(product_id: int) -> Optional[dict]:
 
 
 def list_products() -> list[dict]:
-    """Return every product in the DB, oldest first."""
+    """Return every product with its most recent price, oldest first."""
     with get_db() as conn:
         rows = conn.execute(
-            "SELECT id, url, name, created_at FROM products ORDER BY id"
+            """
+            SELECT p.id, p.url, p.name, p.created_at,
+                   ph.price, ph.currency, ph.in_stock, ph.scraped_at
+            FROM products p
+            LEFT JOIN price_history ph ON ph.id = (
+                SELECT id FROM price_history
+                WHERE product_id = p.id
+                ORDER BY id DESC LIMIT 1
+            )
+            ORDER BY p.id
+            """
         ).fetchall()
         return [dict(r) for r in rows]
+
+
+def get_product(product_id: int) -> Optional[dict]:
+    """Return one product with its most recent price, or None."""
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT p.id, p.url, p.name, p.created_at,
+                   ph.price, ph.currency, ph.in_stock, ph.scraped_at
+            FROM products p
+            LEFT JOIN price_history ph ON ph.id = (
+                SELECT id FROM price_history
+                WHERE product_id = p.id
+                ORDER BY id DESC LIMIT 1
+            )
+            WHERE p.id = ?
+            """,
+            (product_id,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def get_history(product_id: int) -> list[dict]:
+    """Return all price_history rows for a product, newest first."""
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT id, price, currency, in_stock, scraped_at "
+            "FROM price_history WHERE product_id = ? "
+            "ORDER BY id DESC",
+            (product_id,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def delete_product(product_id: int) -> bool:
+    """Delete a product and all its price history. Returns True if found."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id FROM products WHERE id = ?", (product_id,)
+        ).fetchone()
+        if not row:
+            return False
+        # Delete history first (respects foreign key)
+        conn.execute("DELETE FROM price_history WHERE product_id = ?", (product_id,))
+        conn.execute("DELETE FROM products WHERE id = ?", (product_id,))
+        log.info("product_deleted", extra={"extra": {"id": product_id}})
+        return True
