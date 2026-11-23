@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Pricedrop Tracker",
+  "version": "2.0",
+  "description": "Track product prices via the Pricedrop backend",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Track this page"
+  },
+  "permissions": ["activeTab"],
+  "host_permissions": [
+    "http://localhost:8000/*"
+  ]
+}

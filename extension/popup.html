@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        width: 340px;
+        padding: 12px;
+        font-family: system-ui, Arial, sans-serif;
+        font-size: 13px;
+      }
+      h1 { font-size: 15px; margin: 0 0 10px; }
+      .url {
+        background: #f4f4f4;
+        padding: 6px 8px;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        font-size: 11px;
+        word-break: break-all;
+        color: #555;
+        max-height: 48px;
+        overflow: hidden;
+      }
+      button {
+        width: 100%;
+        padding: 9px;
+        cursor: pointer;
+        background: #1a73e8;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      button:hover { background: #1558c4; }
+      button:disabled { background: #9bb8e3; cursor: not-allowed; }
+      #status {
+        margin-top: 10px;
+        padding: 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        display: none;
+      }
+      #status.success { background: #e6f4ea; color: #106b2b; display: block; }
+      #status.error   { background: #fce8e6; color: #a50e0e; display: block; }
+      h2 {
+        font-size: 12px;
+        margin: 16px 0 6px;
+        color: #333;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      #list {
+        max-height: 220px;
+        overflow-y: auto;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        font-size: 11px;
+      }
+      .item { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; }
+      .item:last-child { border-bottom: none; }
+      .item .name { font-weight: 600; display: block; }
+      .item .meta { color: #666; margin-top: 2px; }
+      .empty { padding: 10px; color: #888; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <h1>Pricedrop Tracker</h1>
+
+    <div class="url" id="currentUrl">Loading...</div>
+
+    <button id="trackBtn" disabled>Track this page</button>
+    <div id="status"></div>
+
+    <h2>Tracked products</h2>
+    <div id="list"><div class="empty">Loading...</div></div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
