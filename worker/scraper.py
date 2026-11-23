@@ -11,8 +11,9 @@ Public function:
 """
 
 from playwright.sync_api import sync_playwright
-from backend.database import init_db, upsert_product, add_price
-
+from backend.database import init_db, upsert_product, add_price, get_last_price
+from worker.diff import detect_change, format_alert
+from worker.alerts import send_alert
 from worker.sites.base import SiteParser, ScrapeFailed
 from worker.sites.web_scraping_dev import WebScrapingDevParser
 from worker.utils.logger import get_logger
@@ -75,27 +76,31 @@ def scrape_product(url: str, timeout_ms: int = 30000) -> dict:
             browser.close()
 
 def scrape_and_save(url: str) -> dict:
-    """Scrape a URL and persist the result to the database.
+    """Scrape a URL, save to DB, detect change, and alert if needed."""
+    result = scrape_product(url)
+    product_id = upsert_product(url, result["name"])
 
-    Returns the scrape result merged with {"product_id": int}.
-    """
-    result = scrape_product(url)                # may retry on failure
-    product_id = upsert_product(url, result["name"])   # get/create product row
-    add_price(                                   # append a history row
-        product_id,
-        result["price"],
-        result["currency"],
-        result["in_stock"],
-    )
+    # ⚠️ MUST read previous price BEFORE inserting the new one
+    prev = get_last_price(product_id)
+
+    add_price(product_id, result["price"], result["currency"], result["in_stock"])
+
+    change = detect_change(prev, result)
     log.info(
-        "scrape_saved",
+        "change_detected",
         extra={"extra": {
             "url": url,
             "product_id": product_id,
-            "price": result["price"],
+            "kind": change["kind"],
         }},
     )
-    return {**result, "product_id": product_id}
+
+    alert = format_alert(change, result["name"], url)
+    if alert:
+        subject, body = alert
+        send_alert(subject, body)
+
+    return {**result, "product_id": product_id, "change": change["kind"]}
 
 if __name__ == "__main__":
     import sys
