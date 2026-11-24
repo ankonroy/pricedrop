@@ -27,13 +27,13 @@ Built for real-world reliability, not tutorials:
 
 ### GitHub Actions — runs every 6 hours, for free
 
-| Green workflow                                            | Batch heartbeat log                                |
-| --------------------------------------------------------- | -------------------------------------------------- |
-| ![Green run](docs/screenshots/1-github-actions-green.png) | ![Heartbeat](docs/screenshots/2-heartbeat-log.png) |
+| Green workflow                                            |
+| --------------------------------------------------------- |
+| ![Green run](docs/screenshots/1-github-actions-green.png) |
 
-### REST API (auto-generated Swagger UI)
+<!-- ### REST API (auto-generated Swagger UI)
 
-![Swagger UI](docs/screenshots/6-swagger-api.png)
+![Swagger UI](docs/screenshots/6-swagger-api.png) -->
 
 ## Architecture
 
